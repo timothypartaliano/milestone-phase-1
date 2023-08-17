@@ -11,6 +11,7 @@ func main() {
 	// fmt.Println(db, "<---")
 
 	userHandler := handler.User{DB: db}
-	app := cli.Cli{UserHandler: userHandler}
+	gameHandler := handler.Game{DB: db}
+	app := cli.Cli{UserHandler: userHandler, GameHandler: gameHandler, DB: db}
 	app.AuthMenu()
 }

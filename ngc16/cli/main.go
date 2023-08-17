@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"ngc16/handler"
@@ -9,6 +10,8 @@ import (
 
 type Cli struct{
 	UserHandler handler.User
+	GameHandler handler.Game
+	DB *sql.DB
 }
 
 func (c Cli) AuthMenu() {
@@ -39,15 +42,25 @@ func (c Cli) MainMenu() {
 	fmt.Println("\nwelcome to Games Store")
 	fmt.Println("[COMMAND]: 		Description")
 	fmt.Println("[list-games]: 		Retrieve all games")
+	fmt.Println("[buy-game]:        Buy a game")
 	fmt.Println("[list-orders]: 		Retrieve all orders")
 	fmt.Println("[create-products]: 	Create new products")
-	fmt.Println("or press anything to back to main menu")
+	fmt.Printf("or press anything to back to main menu\n")
 	// fmt.Println("press anything to exit")
 
 	var input string
 	_, err := fmt.Scanln(&input)
 	if err != nil {
 		log.Fatal(err.Error())
+	}
+
+	switch input {
+	case "list-games":
+		c.ListGame()
+	case "buy-game":
+        c.BuyGame()
+	default:
+		os.Exit(1)
 	}
 }
 
@@ -109,4 +122,42 @@ func (c Cli) Login() {
 	}
 
 	// c.AuthMenu()
+}
+
+func (c Cli) ListGame() {
+	c.GameHandler.ShowGames()
+	// if err != nil {
+	// 	log.Fatal(err)
+	// }
+
+	// fmt.Println(games)
+}
+
+func (c Cli) BuyGame() {
+	fmt.Println("\nPlease select a game to buy:")
+
+    c.GameHandler.ShowGames()
+
+    var gameID int
+    fmt.Print("Enter the Game ID you want to buy: ")
+    _, err := fmt.Scanln(&gameID)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    fmt.Print("Enter the amount you want to buy: ")
+    var amount int
+    _, err = fmt.Scanln(&amount)
+    if err != nil {
+        log.Fatal(err.Error())
+    }
+
+    userID := 1
+    err = c.GameHandler.BuyGame(userID, gameID, amount)
+    if err != nil {
+        fmt.Println("Failed to buy the game:", err)
+    } else {
+        fmt.Println("Game bought successfully!")
+    }
+    c.MainMenu()
 }
