@@ -1,4 +1,4 @@
-module ngc16
+module milestone-go
 
 go 1.20
 

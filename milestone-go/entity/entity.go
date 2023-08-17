@@ -3,8 +3,8 @@ package entity
 type User struct {
 	Id			int
 	Username 	string
+	Email 		string
 	Password 	string
-	Age			int
 }
 
 type Game struct {

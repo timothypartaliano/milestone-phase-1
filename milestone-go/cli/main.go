@@ -4,7 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"ngc16/handler"
+	"milestone-go/handler"
+
 	"os"
 )
 
@@ -15,12 +16,10 @@ type Cli struct{
 }
 
 func (c Cli) AuthMenu() {
-	// fmt.Println("\n\n -----")
-	fmt.Println("welcome to Games Store!")
+	fmt.Println("Welcome to Games Store!")
 	fmt.Println("[COMMAND]: 	Description")
 	fmt.Println("[sign-up]: 	Register/create new user")
 	fmt.Println("[sign-in]: 	login into existing user")
-	// fmt.Println("press anything to exit")
 
 	var input string
 	_, err := fmt.Scanln(&input)
@@ -39,14 +38,13 @@ func (c Cli) AuthMenu() {
 }
 
 func (c Cli) MainMenu() {
-	fmt.Println("\nwelcome to Games Store")
+	fmt.Println("\nWelcome to Games Store!")
 	fmt.Println("[COMMAND]: 		Description")
 	fmt.Println("[list-games]: 		Retrieve all games")
-	fmt.Println("[buy-game]:        Buy a game")
+	fmt.Println("[buy-games]:        	Buy a game")
 	fmt.Println("[list-orders]: 		Retrieve all orders")
-	fmt.Println("[create-products]: 	Create new products")
-	fmt.Printf("or press anything to back to main menu\n")
-	// fmt.Println("press anything to exit")
+	fmt.Println("or press anything to back to main menu")
+	fmt.Println("\n-----")
 
 	var input string
 	_, err := fmt.Scanln(&input)
@@ -57,8 +55,10 @@ func (c Cli) MainMenu() {
 	switch input {
 	case "list-games":
 		c.ListGame()
-	case "buy-game":
+	case "buy-games":
         c.BuyGame()
+	case "list-orders":
+        c.ListOrders()
 	default:
 		os.Exit(1)
 	}
@@ -67,25 +67,24 @@ func (c Cli) MainMenu() {
 func (c Cli) Register() {
 	fmt.Println("\nPlease Register!")
 
-	var username, password string
-	var age int
+	var username, email, password string
 
 	fmt.Println("Please input username:")
 	_, errUsername := fmt.Scanln(&username)
 
+	fmt.Println("Please input email:")
+	_, errEmail := fmt.Scanln(&email)
+
 	fmt.Println("Please input password:")
 	_, errPassword := fmt.Scanln(&password)
 
-	fmt.Println("Please input age:")
-	_, errAge := fmt.Scanln(&age)
-
 	if errUsername != nil ||
 		errPassword != nil ||
-		errAge != nil {
+		errEmail != nil {
 		log.Fatal("failed to scan input")
 	}
 
-	err := c.UserHandler.Register(username, password, age)
+	err := c.UserHandler.Register(username, email, password)
 	if err != nil {
 		fmt.Println("failed to create new user...")
 	} else {
@@ -97,40 +96,32 @@ func (c Cli) Register() {
 func (c Cli) Login() {
 	fmt.Println("\nPlease Login!")
 	
-	var username, password string
+	var email, password string
 
-	fmt.Println("Please input username:")
-	_, errUsername := fmt.Scanln(&username)
+	fmt.Println("Please input email:")
+	_, errEmail := fmt.Scanln(&email)
 
 	fmt.Println("Please input password:")
 	_, errPassword := fmt.Scanln(&password)
 
-	if errUsername != nil ||
+	if errEmail != nil ||
 		errPassword != nil {
 		log.Fatal("failed to scan input")
 	}
-	// user, err := c.UserHandler.Login(username, password)
-	_, err := c.UserHandler.Login(username, password)
+	_, err := c.UserHandler.Login(email, password)
 	if err != nil {
-		// fmt.Println("error: ", err.Error())
 		fmt.Println("\nFailed to login!")
 		c.Login()
 	} else {
 		fmt.Println("\nSuccess login user!")
-		// fmt.Println(user, "<---")
 		c.MainMenu()
 	}
-
-	// c.AuthMenu()
 }
 
 func (c Cli) ListGame() {
 	c.GameHandler.ShowGames()
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
 
-	// fmt.Println(games)
+	c.MainMenu()
 }
 
 func (c Cli) BuyGame() {
@@ -159,5 +150,11 @@ func (c Cli) BuyGame() {
     } else {
         fmt.Println("Game bought successfully!")
     }
+    c.MainMenu()
+}
+
+func (c Cli) ListOrders() {
+    fmt.Println("\nList of Orders:")
+    c.GameHandler.ShowOrders()
     c.MainMenu()
 }

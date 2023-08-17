@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"ngc16/entity"
+	"milestone-go/entity"
 )
 
 type Game struct {
@@ -15,7 +15,6 @@ type Game struct {
 func (g Game) ShowGames() {
     var games entity.Game
 
-    // query := `select game_id, title, price from games;`
     query := `select * from games;`
 
     ctx := context.Background()
@@ -41,31 +40,32 @@ func (g Game) BuyGame(userID, gameID, amount int) error {
     query := `INSERT INTO orders (user_id, game_id, amount) VALUES (?, ?, ?);`
     _, err := g.DB.Exec(query, userID, gameID, amount)
     return err
+}   
+
+func (g Game) ShowOrders() {
+    query := `
+        SELECT o.order_id, u.username, g.title, o.amount
+        FROM orders o
+        JOIN users u ON o.user_id = u.user_id
+        JOIN games g ON o.game_id = g.game_id;
+    `
+
+    ctx := context.Background()
+    rows, err := g.DB.QueryContext(ctx, query)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer rows.Close()
+
+    fmt.Println("Order ID\tUsername\tGame Title\tAmount")
+    fmt.Println("------------------------------------------------------------")
+
+    for rows.Next() {
+        var orderID, amount int
+        var username, title string
+        if err := rows.Scan(&orderID, &username, &title, &amount); err != nil {
+            log.Fatal(err)
+        }
+        fmt.Printf("%d\t\t%s\t\t%s\t%d\n", orderID, username, title, amount)
+    }
 }
-
-// package handler
-
-// import (
-// 	"database/sql"
-// 	"ngc16/entity"
-// )
-
-// func listGames(db *sql.DB) ([]entity.Game, error) {
-// 	var games []entity.Game
-// 	rows, err := db.Query("SELECT game_id, title, description FROM games")
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	defer rows.Close()
-
-// 	for rows.Next() {
-// 		var game entity.Game
-// 		err := rows.Scan(&game.ID, &game.Title, &game.Price)
-// 		if err != nil {
-// 			return nil, err
-// 		}
-// 		games = append(games, game)
-// 	}
-
-// 	return games, nil
-// }
