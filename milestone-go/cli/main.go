@@ -4,19 +4,21 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"milestone-go/entity"
 	"milestone-go/handler"
 
 	"os"
 )
 
-type Cli struct{
-	UserHandler handler.User
-	GameHandler handler.Game
-	DB *sql.DB
+type Cli struct {
+	UserHandler  handler.User
+	GameHandler  handler.Game
+	DB           *sql.DB
+	LoggedInUser entity.User
 }
 
-func (c Cli) AuthMenu() {
-	fmt.Println("Welcome to Games Store!")
+func (c *Cli) AuthMenu() {
+	fmt.Println("Welcome to ultimate Games Store!")
 	fmt.Println("[COMMAND]: 	Description")
 	fmt.Println("[sign-up]: 	Register/create new user")
 	fmt.Println("[sign-in]: 	login into existing user")
@@ -31,14 +33,18 @@ func (c Cli) AuthMenu() {
 	case "sign-up":
 		c.Register()
 	case "sign-in":
-		c.Login()
+		loggedInUser := c.Login()
+		if loggedInUser.Id != 0 {
+			c.LoggedInUser = loggedInUser
+		}
+		c.MainMenu()
 	default:
 		os.Exit(1)
 	}
 }
 
-func (c Cli) MainMenu() {
-	fmt.Println("\nWelcome to Games Store!")
+func (c *Cli) MainMenu() {
+	fmt.Println("\nWelcome to ultimate Games Store!")
 	fmt.Println("[COMMAND]: 		Description")
 	fmt.Println("[list-games]: 		Retrieve all games")
 	fmt.Println("[buy-games]:        	Buy a game")
@@ -56,15 +62,15 @@ func (c Cli) MainMenu() {
 	case "list-games":
 		c.ListGame()
 	case "buy-games":
-        c.BuyGame()
+		c.BuyGame(c.LoggedInUser)
 	case "list-orders":
-        c.ListOrders()
+		c.ListOrders()
 	default:
 		os.Exit(1)
 	}
 }
 
-func (c Cli) Register() {
+func (c *Cli) Register() {
 	fmt.Println("\nPlease Register!")
 
 	var username, email, password string
@@ -93,9 +99,9 @@ func (c Cli) Register() {
 	c.AuthMenu()
 }
 
-func (c Cli) Login() {
+func (c *Cli) Login() entity.User {
 	fmt.Println("\nPlease Login!")
-	
+
 	var email, password string
 
 	fmt.Println("Please input email:")
@@ -104,57 +110,69 @@ func (c Cli) Login() {
 	fmt.Println("Please input password:")
 	_, errPassword := fmt.Scanln(&password)
 
-	if errEmail != nil ||
-		errPassword != nil {
+	if errEmail != nil || errPassword != nil {
 		log.Fatal("failed to scan input")
 	}
-	_, err := c.UserHandler.Login(email, password)
+
+	loggedInUserID, err := c.UserHandler.Login(email, password)
 	if err != nil {
 		fmt.Println("\nFailed to login!")
-		c.Login()
+		c.AuthMenu()
+		return entity.User{}
 	} else {
 		fmt.Println("\nSuccess login user!")
-		c.MainMenu()
+		return loggedInUserID
 	}
 }
 
-func (c Cli) ListGame() {
+func (c *Cli) ListGame() {
 	c.GameHandler.ShowGames()
 
 	c.MainMenu()
 }
 
-func (c Cli) BuyGame() {
+func (c *Cli) BuyGame(loggedInUser entity.User) {
 	fmt.Println("\nPlease select a game to buy:")
 
-    c.GameHandler.ShowGames()
+	c.GameHandler.ShowGames()
 
-    var gameID int
-    fmt.Print("Enter the Game ID you want to buy: ")
-    _, err := fmt.Scanln(&gameID)
-    if err != nil {
-        log.Fatal(err.Error())
-    }
+	var game_id int
+	fmt.Print("Enter the Game ID you want to buy: ")
+	_, err := fmt.Scanln(&game_id)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
-    fmt.Print("Enter the amount you want to buy: ")
-    var amount int
-    _, err = fmt.Scanln(&amount)
-    if err != nil {
-        log.Fatal(err.Error())
-    }
+	fmt.Print("Enter the amount you want to buy: ")
+	var amount int
+	_, err = fmt.Scanln(&amount)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
 
-    userID := 1
-    err = c.GameHandler.BuyGame(userID, gameID, amount)
-    if err != nil {
-        fmt.Println("Failed to buy the game:", err)
-    } else {
-        fmt.Println("Game bought successfully!")
-    }
-    c.MainMenu()
+	selectedGame, err := c.GameHandler.GetGameByID(game_id)
+	if err != nil {
+		fmt.Println("Failed to retrieve game information:", err)
+		c.MainMenu()
+		return
+	}
+
+	totalPrice := selectedGame.Price * amount
+
+	fmt.Printf("Total Price: $%d\n", totalPrice)
+
+	userID := loggedInUser.Id
+	err = c.GameHandler.BuyGame(userID, game_id, amount)
+	if err != nil {
+		fmt.Println("Failed to buy the game:", err)
+	} else {
+		fmt.Println("Game bought successfully!")
+	}
+	c.MainMenu()
 }
 
-func (c Cli) ListOrders() {
-    fmt.Println("\nList of Orders:")
-    c.GameHandler.ShowOrders()
-    c.MainMenu()
+func (c *Cli) ListOrders() {
+	fmt.Println("\nList of Orders:")
+	c.GameHandler.ShowOrders(c.LoggedInUser.Id)
+	c.MainMenu()
 }
